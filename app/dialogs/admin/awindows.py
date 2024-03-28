@@ -2,9 +2,10 @@ from aiogram_dialog import Window, DialogManager
 from aiogram_dialog.widgets.kbd import Cancel, Back, Button, Column, Row, ScrollingGroup, Select
 from aiogram_dialog.widgets.text import Format, Const, Jinja
 from app.dialogs.admin import aselected
-from app.dialogs.admin.astates import AdminPanel, UserReports, AdminReq, Mailing, AdminFreeQuestion, QuestionGroup, OrderChange
-from aiogram_dialog.widgets.input import TextInput
+from app.dialogs.admin.astates import AdminPanel, UserReports, AdminReq, Mailing, AdminFreeQuestion, QuestionGroup, OrderChange, PaymentData
+from aiogram_dialog.widgets.input import TextInput, MessageInput
 from app.db.repo import Repo
+from aiogram.enums import ContentType
 import operator
 from datetime import datetime, date
 
@@ -214,12 +215,45 @@ def order_page_admin():
 {% endfor %}
                 """
             ),
-        Button(Const("Подтвердить оплату"), id="aprove"),
-        Button(Const("Выслать данные для оплаты"), id="send_payment"),
+        Button(Const("Подтвердить оплату"), id="aprove", on_click=aselected.add_channel_id),
+        Button(Const("Выслать данные для оплаты"), id="send_payment", on_click=aselected.go_payment),
         Cancel(Const("Назад")),
         getter= get_orders_admin,
         state= OrderChange.order_view
     )
+    
+def admin_add_document():
+    return Window(
+        Const("Отправьте документ:"),
+        Cancel(Const("Отмена")),
+        MessageInput(content_types=[ContentType.DOCUMENT], func=aselected.on_input_doc),
+        state = PaymentData.input_document
+    )
+
+def admin_add_url():
+    return Window(
+        Const("Отправьте ссылку для оплаты:"),
+        Cancel(Const("Отмена")),
+        TextInput(id= "payment_url", on_success = aselected.on_input_url),
+        state= PaymentData.input_url
+    )
+
+def admin_finish_payment():
+    return Window(
+        Const("Данные для оплаты отправлены пользователю, статус заявки изменен на Ожидает оплаты"),
+        Cancel(Const("В главнное меню")),
+        state= PaymentData.finish_input
+    )
+    
+def add_private_channel():
+    return Window(
+        Const("Укажите ссылку на приватный канал"),
+        Cancel(Const("Отмена"), id="private_add"),
+        TextInput(id='private_add_id', on_success=aselected.add_channel_operator),
+        state=OrderChange.input_channel
+    )
+
+
 
 async def get_orders_admin(**kwargs):
     manager : DialogManager = kwargs.get("dialog_manager")
@@ -241,14 +275,6 @@ async def get_orders_admin(**kwargs):
         "consul" : [(text_item , data_item) for text_item, data_item in zip(text, order_data)],
         "title" : "Записи на консультацию:"
     }
-
-def finish_free_answer():
-    return Window(
-        Const("Сообщение отправлено."),
-        Cancel(Const("Назад")),
-        state=AdminFreeQuestion.finish_answer
-    )
-
 
 def start_meiling():
     return Window(

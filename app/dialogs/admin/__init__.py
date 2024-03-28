@@ -16,9 +16,15 @@ def admin_menu_dialog():
             awindows.tech_supp_list(),
             awindows.aconsul_list(),
             
+        ),   
+        Dialog(
+            awindows.order_page_admin(),
+            awindows.add_private_channel(),
         ),
         Dialog(
-            awindows.order_page_admin()
+            awindows.admin_finish_payment(),
+            awindows.admin_add_url(),
+            awindows.admin_add_document()
         ),
         Dialog(
             awindows.start_meiling(),

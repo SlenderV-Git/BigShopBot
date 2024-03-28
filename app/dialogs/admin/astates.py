@@ -21,9 +21,12 @@ class QuestionGroup(StatesGroup):
 class OrderChange(StatesGroup):
     order_view = State()
     appove = State()
+    input_channel = State()
+    
+class PaymentData(StatesGroup):
+    input_document = State()
     input_url = State()
     finish_input = State()
-
 
 class AdminFreeQuestion(StatesGroup):
     input_answer = State()

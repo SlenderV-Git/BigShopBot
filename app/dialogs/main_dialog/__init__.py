@@ -38,5 +38,9 @@ def bot_menu_dialogs():
         ),
         Dialog(
             windows.order_page()
+        ),
+        Dialog(
+            windows.send_doc_page(),
+            windows.finish_doc_page()
         )
     ]

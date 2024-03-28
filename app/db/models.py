@@ -35,6 +35,10 @@ class Order(Base):
     date_change_status = Column(DATE, default=func.current_date())
     status = Column(String, default="Create")
     field = Column(String)
+    document_id = Column(String)
+    done_document_id = Column(String)
+    url_pay = Column(String)
+    private_url = Column(String)
     user_tg_id = Column(BigInteger, ForeignKey("users.tg_id"))
     user = relationship("User", back_populates="orders")
     

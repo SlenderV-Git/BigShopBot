@@ -39,3 +39,7 @@ class FAQ(StatesGroup):
     
 class OrdersList(StatesGroup):
     orders_start = State()
+
+class SendDoneDoc(StatesGroup):
+    send_done_doc = State()
+    finish_doc = State()

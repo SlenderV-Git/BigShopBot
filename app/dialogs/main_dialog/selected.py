@@ -3,7 +3,7 @@ from typing import Any
 from aiogram.types import CallbackQuery, Message
 from aiogram_dialog import DialogManager
 
-from app.dialogs.main_dialog.states import BotMenu, Question, TechSupport, PaidQuestion, FreeQuestion, Cooperation, FAQ, Courses, OrdersList
+from app.dialogs.main_dialog.states import BotMenu, Question, TechSupport, PaidQuestion, FreeQuestion, Cooperation, FAQ, Courses, OrdersList, SendDoneDoc
 from app.dialogs.main_dialog.lexicon import faq
 from app.services.payment import send_order
 from app.db.repo import Repo
@@ -76,3 +76,11 @@ async def go_admin(c: CallbackQuery, widget: Any, manager: DialogManager):
     
 async def to_orders_list(c: CallbackQuery, widget: Any, manager: DialogManager):
     await manager.start(OrdersList.orders_start)
+
+async def to_send_doc(c: CallbackQuery, widget: Any, manager: DialogManager):
+    await manager.start(SendDoneDoc.send_done_doc)
+
+async def finish_done_doc(message : Message, widget: Any, manager: DialogManager):
+    repo : Repo = manager.middleware_data.get("repo")
+    await repo.set_done_doc(manager.event.from_user.id, message.document.file_id)
+    await manager.switch_to(SendDoneDoc.finish_doc)

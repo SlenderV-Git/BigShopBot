@@ -137,4 +137,52 @@ class Repo:
         orders : Result = await self.session.execute(stmt)
         result = orders.all()
         return result 
+    
+    async def add_channel(self, user_id, channel_id):
+        stmt = update(Order).where(Order.user_tg_id == user_id).values(private_url = channel_id, 
+                                                                       status = "access", 
+                                                                       date_change_status = datetime.now())
+        await self.session.execute(stmt)
+        await self.session.commit()
         
+    async def get_status(self, user_id):
+        stmt = select(Order.status).where(Order.user_tg_id == user_id)
+        status : Result = await self.session.execute(stmt)
+        result = status.scalars().first()
+        return result
+        
+    async def get_access(self, user_id):
+        if await self.get_status(user_id=user_id) == 'access':
+            stmt = select(Order.private_url).where(Order.user_tg_id == user_id)
+            status : Result = await self.session.execute(stmt)
+            result = status.scalars().first()
+            return result
+        else:
+            return " "
+    
+    async def add_payment_data(self, user_id, url_pay, doc_id):
+        stmt = update(Order).where(Order.user_tg_id == user_id).values(url_pay = url_pay, 
+                                                                       document_id = doc_id, 
+                                                                       status = "payment", 
+                                                                       date_change_status = datetime.now())
+        await self.session.execute(stmt)
+        await self.session.commit()
+        
+    async def get_payment_data(self, user_id):
+        if await self.get_status(user_id=user_id) == 'payment':
+            stmt = select(Order.document_id, Order.url_pay).where(Order.user_tg_id == user_id)
+            status : Result = await self.session.execute(stmt)
+            result = status.first()
+            return result
+        else:
+            return (None, None)
+        
+    async def set_done_doc(self, user_id, doc_id):
+        stmt = update(Order).where(Order.user_tg_id == user_id).values(done_document_id = doc_id)
+        await self.session.execute(stmt)
+        await self.session.commit()
+        
+    async def get_done_doc(self, user_id):
+        stmt = (select(Order.done_document_id).where(Order.user_tg_id == user_id))
+        users : Result = await self.session.execute(stmt)
+        return users.scalars().first()

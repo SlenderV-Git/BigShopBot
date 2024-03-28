@@ -1,13 +1,15 @@
 import logging
 from typing import Any
 from magic_filter import F
+from aiogram import Bot
+from aiogram.enums import ContentType
 from aiogram_dialog.widgets.common import Whenable
 from aiogram_dialog import Window, Data, DialogManager, ShowMode
-from aiogram_dialog.widgets.input import TextInput
+from aiogram_dialog.widgets.input import TextInput, MessageInput
 from aiogram_dialog.widgets.kbd import Cancel, Back, Button, Column, Row
 from aiogram_dialog.widgets.text import Format, Const, Jinja
 from . import keyboards, selected
-from .states import BotMenu, Question, TechSupport, PaidQuestion, FreeQuestion, Cooperation, FAQ, Courses, OrdersList
+from .states import BotMenu, Question, TechSupport, PaidQuestion, FreeQuestion, Cooperation, FAQ, Courses, OrdersList, SendDoneDoc
 from enum import Enum
 from aiogram_dialog.widgets.kbd import SwitchInlineQuery
 from aiogram_dialog.widgets.text import Const
@@ -169,17 +171,41 @@ def order_page():
 {% endfor %}
                 """
             ),
+        Format("Ваша ссылка на приватную группу: {private_url}", when="approved"),
+        Format("Ссылка на оплату: {pay_url}", when="payment"),
+        Button(Const("Отравить подписанный документ"), id = "send_done_document", on_click=selected.to_send_doc, when="payment"),
         Cancel(Const("В главное меню")),
         getter= get_orders,
         state= OrdersList.orders_start
     )
+
+def send_doc_page():
+    return Window(
+        Const("Отправьте подписанный документ"),
+        MessageInput(func=selected.finish_done_doc, content_types=ContentType.DOCUMENT),
+        Cancel(Const("Отмена")),
+        state=SendDoneDoc.send_done_doc
+    )
+def finish_doc_page():
+    return Window(
+        Const("Документ отправлен на рассмотрение, следите за статусом заявки в Мои заявки"),
+        Cancel(Const("Отмена")),
+        state=SendDoneDoc.finish_doc
+    )
     
 async def get_orders(**kwargs):
     manager : DialogManager = kwargs.get("dialog_manager")
+    bot : Bot = kwargs.get("bot")
     repo : Repo = manager.middleware_data.get("repo")
     order_data = await repo.get_order_data(manager.event.from_user.id)
+    status = await repo.get_status(manager.event.from_user.id)
+    
+    text = ("Дата создания заявки", "Дата изменения статуса заявки", "Статус обработки заявки", "Ваши ответы")
+    
     if not order_data:
-        order_data = "Нет записей на консультацию"
+        consul_data = [("", "Нет записей на консультацию")]
+        url = "",
+        pay_url = ""
     else:
         result = []
         for order in order_data:
@@ -188,10 +214,18 @@ async def get_orders(**kwargs):
             else:
                 result.append(order)
         order_data = result
-        text = ("Дата создания заявки", "Дата изменения статуса заявки", "Статус обработки заявки", "Ваши ответы")
+        url = await repo.get_access(manager.event.from_user.id)
+        doc_id, pay_url = await repo.get_payment_data(manager.event.from_user.id)
+        consul_data = [(text_item , data_item) for text_item, data_item in zip(text, order_data)]
+        if doc_id:
+            await bot.send_document(chat_id= manager.event.message.chat.id, document=doc_id)
     return {
-        "consul" : [(text_item , data_item) for text_item, data_item in zip(text, order_data)],
-        "title" : "Записи на консультацию:"
+        "consul" : consul_data,
+        "title" : "Записи на консультацию:",
+        "private_url" : url,
+        "pay_url" : pay_url,
+        "approved" : status == "access",
+        "payment" : status == "payment"
     }
 
 
