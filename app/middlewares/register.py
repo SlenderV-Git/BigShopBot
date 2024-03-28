@@ -16,5 +16,7 @@ class RegisterMiddleware(BaseMiddleware):
         repo: Repo = data["repo"]
         user = await repo.get_user(event.from_user.id)
         if not user:
-            await repo.create_user(event.from_user.id)
+            await repo.create_user(user_id = event.from_user.id,
+                                   fullname = event.from_user.full_name,
+                                   username = event.from_user.username)
         return await handler(event, data)

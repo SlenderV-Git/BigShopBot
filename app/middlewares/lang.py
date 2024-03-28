@@ -19,6 +19,7 @@ class LangMiddleware(BaseMiddleware):
         repo: Repo = data["repo"]
         user_lang = (await repo.get_user(event.from_user.id)).lang
         translator_runner: TranslatorRunner = fluent.get_translator_by_locale(user_lang)
+        data["repo"] = repo
         data["i18n"] = translator_runner
         data["i18n_hub"] = fluent.hub
         return await handler(event, data)

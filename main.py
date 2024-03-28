@@ -11,6 +11,8 @@ from app.db.base import Base
 from app.handlers.setup import get_router
 from app.middlewares.setup import setup_middlewares
 from app.services.fluent import FluentService, TranslationLoader
+from aiogram_dialog import setup_dialogs
+
 
 
 async def _configure_postgres():
@@ -38,11 +40,14 @@ async def main():
     logging.basicConfig(level=logging.DEBUG)
     bot = Bot(token=load_setting().token)
     dp = Dispatcher()
+    setup_dialogs(dp)
+    
     session_maker = await _configure_postgres()
     setup_middlewares(dp, session_maker)
+    
     dp.include_router(get_router())
     fluent = _configure_fluent()
     await dp.start_polling(bot, fluent=fluent)
 
-
-asyncio.run(main())
+if __name__ == "__main__":
+    asyncio.run(main())
