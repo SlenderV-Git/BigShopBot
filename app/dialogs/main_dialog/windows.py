@@ -5,23 +5,25 @@ from aiogram_dialog.widgets.common import Whenable
 from aiogram_dialog import Window, Data, DialogManager, ShowMode
 from aiogram_dialog.widgets.input import TextInput
 from aiogram_dialog.widgets.kbd import Cancel, Back, Button, Column, Row
-from aiogram_dialog.widgets.text import Format, Const
+from aiogram_dialog.widgets.text import Format, Const, Jinja
 from . import keyboards, selected
-from .states import BotMenu, Consultation, Question, TechSupport, PaidQuestion, FreeQuestion, Cooperation, FAQ, Courses
+from .states import BotMenu, Question, TechSupport, PaidQuestion, FreeQuestion, Cooperation, FAQ, Courses, OrdersList
 from enum import Enum
 from aiogram_dialog.widgets.kbd import SwitchInlineQuery
 from aiogram_dialog.widgets.text import Const
 from app.dialogs.main_dialog.lexicon import faq
 from app.db.repo import Repo
 from typing import Dict
+from app.dialogs.consultation.consul_selected import to_consultation
+from datetime import date
 
 
 def main_menu():
     return Window(
         Const('Главное меню'),
         Column(
-            Button(Const("Мои заказы"), id="orders"),
-            Button(Const("Консультация"), id="consul", on_click=selected.to_consultation),
+            Button(Const("Мои заказы"), id="orders", on_click=selected.to_orders_list),
+            Button(Const("Консультация"), id="consul", on_click=to_consultation),
             Button(Const("Задать вопрос"), id="question", on_click=selected.to_question),
             Button(Const("Курс"), id="course", on_click=selected.to_courses),
             Button(Const("Сотрудничество"), id="coop", on_click=selected.to_cooperation),
@@ -40,22 +42,6 @@ async def get_user(**kwargs):
         "is_admin" : manager.event.from_user.id in admins
     }
     
-def w_cosultation():
-    return Window(
-        Const("Прежде чем записываться на консультацию, ознакомься со следующей информацией: ""хххххххх"""),
-        Row(
-            Button(Const("Согласен"), id='consul_accept', on_click= selected.consul_accept_process),
-            Cancel(Const("Не согласен"), id = "consul_deny")
-        ),
-        state=Consultation.info
-    )
-
-def consul_info():
-    return Window(
-        Const("Введите имя"),
-        state=Consultation.name
-    )
-
 def w_question():
     return Window(
         Const("У тебя есть возможность задать свой вопрос автору, но нет гарантии, что получишь на него ответ: может не быть времени, возможности, желания, и так далее. Также у тебя есть возможность задать платный вопрос, на который получишь гарантированный ответ. Стоимость Х рублей."),
@@ -168,11 +154,45 @@ def w_faq():
 def cur_faq():
     return Window(
         Format("{dialog_data[type_faq]}"),
-        Button(Const("Консультации"), id="go_consul", on_click=selected.to_consultation, when=F["dialog_data"]["consul"]),
+        Button(Const("Консультации"), id="go_consul", on_click=to_consultation, when=F["dialog_data"]["consul"]),
         Button(Const("Курсы"), id="go_course", on_click=selected.to_courses, when=F["dialog_data"]["course"]),
         Cancel(Const("В главное меню")),
         state=FAQ.cur_faq
     )
+
+def order_page():
+    return Window(
+        Const("Список заказов\n"),
+        Jinja("""{{title}}
+{% for text_item, data_item in consul %}
+        * {{ text_item |capitalize }} - {{ data_item }}
+{% endfor %}
+                """
+            ),
+        Cancel(Const("В главное меню")),
+        getter= get_orders,
+        state= OrdersList.orders_start
+    )
+    
+async def get_orders(**kwargs):
+    manager : DialogManager = kwargs.get("dialog_manager")
+    repo : Repo = manager.middleware_data.get("repo")
+    order_data = await repo.get_order_data(manager.event.from_user.id)
+    if not order_data:
+        order_data = "Нет записей на консультацию"
+    else:
+        result = []
+        for order in order_data:
+            if isinstance(order, date):
+                result.append(order.strftime("%Y-%m-%d"))
+            else:
+                result.append(order)
+        order_data = result
+        text = ("Дата создания заявки", "Дата изменения статуса заявки", "Статус обработки заявки", "Ваши ответы")
+    return {
+        "consul" : [(text_item , data_item) for text_item, data_item in zip(text, order_data)],
+        "title" : "Записи на консультацию:"
+    }
 
 
     

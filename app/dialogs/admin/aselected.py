@@ -1,6 +1,6 @@
 from aiogram.types import CallbackQuery, Message
 from typing import Any
-from app.dialogs.admin.astates import AdminPanel, Mailing, AdminReq, UserReports, AdminFreeQuestion, QuestionGroup
+from app.dialogs.admin.astates import AdminPanel, Mailing, AdminReq, UserReports, AdminFreeQuestion, QuestionGroup, OrderChange
 from aiogram_dialog import DialogManager
 
 async def to_requests(c: CallbackQuery, widget: Any, manager: DialogManager):
@@ -30,3 +30,12 @@ async def to_paid_quest(c: CallbackQuery, widget: Any, manager: DialogManager):
     
 async def to_tech_supp(c: CallbackQuery, widget: Any, manager: DialogManager):
     await manager.start(QuestionGroup.tech_supp)
+    
+async def to_consul_list(c: CallbackQuery, widget: Any, manager: DialogManager):
+    await manager.start(QuestionGroup.consul_list)
+    
+    
+async def on_consul_selected(callback: CallbackQuery, widget: Any,
+                            manager: DialogManager, item_id: str):
+    await manager.start(OrderChange.order_view, data={"user_id" : item_id})
+    

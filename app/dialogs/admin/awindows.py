@@ -2,11 +2,12 @@ from aiogram_dialog import Window, DialogManager
 from aiogram_dialog.widgets.kbd import Cancel, Back, Button, Column, Row, ScrollingGroup, Select
 from aiogram_dialog.widgets.text import Format, Const, Jinja
 from app.dialogs.admin import aselected
-from app.dialogs.admin.astates import AdminPanel, UserReports, AdminReq, Mailing, AdminFreeQuestion, QuestionGroup
+from app.dialogs.admin.astates import AdminPanel, UserReports, AdminReq, Mailing, AdminFreeQuestion, QuestionGroup, OrderChange
 from aiogram_dialog.widgets.input import TextInput
 from app.db.repo import Repo
 import operator
-from datetime import datetime
+from datetime import datetime, date
+
 
 
 def main_menu():
@@ -63,6 +64,7 @@ def list_question():
         Button(Const("Бесплатные вопросы"), id="on_free_quest", on_click=aselected.to_free_quest),
         Button(Const("Платные вопросы"), id="on_paid_quest", on_click=aselected.to_paid_quest),
         Button(Const("Обращения в тех поддержку"), id="on_tech_supp", on_click=aselected.to_tech_supp),
+        Button(Const("Заявки на консультацию"), id = "on_consul_list", on_click=aselected.to_consul_list),
         Cancel(Const("Отмена")),
         state=AdminReq.admin_req
 
@@ -173,10 +175,79 @@ def finish_free_answer():
         state=AdminFreeQuestion.finish_answer
     )
 
+def aconsul_list():
+    return Window(
+        Format("Актуальный список заявок на консультацию. Дата выставления отчета: {date}"),
+        ScrollingGroup(
+            Select(
+                Format("{item[0]} Статус заявки: {item[1]} ({pos}/{data[count]})"),
+                id="consul_but",
+                item_id_getter=operator.itemgetter(2),
+                items="consul_items",
+                on_click=aselected.on_consul_selected
+            ),
+            id="consul_list",
+            width=1, 
+            height=6
+        ),
+        Cancel(Const("Назад")),
+        getter= get_consul,
+        state= QuestionGroup.consul_list
+    )
 
+async def get_consul(**kwargs):
+    manager : DialogManager = kwargs.get("dialog_manager")
+    repo : Repo = manager.middleware_data.get("repo")
+    req = await repo.get_orders()
+    return {
+        "consul_items" : req,
+        "count": len(req),
+        "date" : datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    }
 
+def order_page_admin():
+    return Window(
+        Const("Список заказов\n"),
+        Jinja("""{{title}}
+{% for text_item, data_item in consul %}
+        * {{ text_item |capitalize }} - {{ data_item }}
+{% endfor %}
+                """
+            ),
+        Button(Const("Подтвердить оплату"), id="aprove"),
+        Button(Const("Выслать данные для оплаты"), id="send_payment"),
+        Cancel(Const("Назад")),
+        getter= get_orders_admin,
+        state= OrderChange.order_view
+    )
 
+async def get_orders_admin(**kwargs):
+    manager : DialogManager = kwargs.get("dialog_manager")
+    repo : Repo = manager.middleware_data.get("repo")
+    user_id = manager.start_data["user_id"]
+    order_data = await repo.get_order_data(int(user_id))
+    if not order_data:
+        order_data = "Нет записей на консультацию"
+    else:
+        result = []
+        for order in order_data:
+            if isinstance(order, date):
+                result.append(order.strftime("%Y-%m-%d"))
+            else:
+                result.append(order)
+        order_data = result
+        text = ("Дата создания заявки", "Дата изменения статуса заявки", "Статус обработки заявки", "Ваши ответы")
+    return {
+        "consul" : [(text_item , data_item) for text_item, data_item in zip(text, order_data)],
+        "title" : "Записи на консультацию:"
+    }
 
+def finish_free_answer():
+    return Window(
+        Const("Сообщение отправлено."),
+        Cancel(Const("Назад")),
+        state=AdminFreeQuestion.finish_answer
+    )
 
 
 def start_meiling():

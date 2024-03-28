@@ -19,13 +19,20 @@ class User(Base):
     questions = relationship("FreeQuestion", back_populates="user")
     paid_questions = relationship("PaidQuestion", back_populates="user")
     purchases = relationship("CoursePurchase", back_populates="user")
+
+class ConsultationQuiz(Base):
+    __tablename__ = "consultation_quiz"
+
+    cur_quiz = Column(BigInteger, default= 0)
+    field = Column(String, default=" ")
+    user_tg_id = Column(BigInteger, ForeignKey("users.tg_id"), primary_key=True)
     
 class Order(Base):
-    __tablename__ = "order"
+    __tablename__ = "orders"
     
     oder_id = Column(BigInteger, primary_key=True, autoincrement=True)
     date_create = Column(DATE, default=func.current_date())
-    date_change_status = Column(DATE, nullable=False)
+    date_change_status = Column(DATE, default=func.current_date())
     status = Column(String, default="Create")
     field = Column(String)
     user_tg_id = Column(BigInteger, ForeignKey("users.tg_id"))

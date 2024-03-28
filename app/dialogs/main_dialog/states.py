@@ -4,13 +4,6 @@ from aiogram.filters.state import State, StatesGroup
 class BotMenu(StatesGroup):
     main_menu = State()
     
-class Consultation(StatesGroup):
-    info = State()
-    name = State()
-    birth_date = State()
-    phone_number = State()
-    meeting_subject = State()
-    
 class Question(StatesGroup):
     title_group = State()
     select_paid_metod = State()
@@ -43,3 +36,6 @@ class Cooperation(StatesGroup):
 class FAQ(StatesGroup):
     faq_menu = State()
     cur_faq = State()
+    
+class OrdersList(StatesGroup):
+    orders_start = State()

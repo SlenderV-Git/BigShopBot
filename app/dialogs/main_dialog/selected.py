@@ -3,18 +3,11 @@ from typing import Any
 from aiogram.types import CallbackQuery, Message
 from aiogram_dialog import DialogManager
 
-from app.dialogs.main_dialog.states import BotMenu, Consultation, Question, TechSupport, PaidQuestion, FreeQuestion, Cooperation, FAQ, Courses
+from app.dialogs.main_dialog.states import BotMenu, Question, TechSupport, PaidQuestion, FreeQuestion, Cooperation, FAQ, Courses, OrdersList
 from app.dialogs.main_dialog.lexicon import faq
 from app.services.payment import send_order
 from app.db.repo import Repo
 from app.dialogs.admin.astates import AdminPanel
-
-async def to_consultation(c: CallbackQuery, widget: Any, manager: DialogManager):
-    await manager.start(Consultation.info)
-
-async def consul_accept_process(c: CallbackQuery, widget: Any, manager: DialogManager):
-    await manager.switch_to(Consultation.name)
-
 
 async def to_question(c: CallbackQuery, widget: Any, manager: DialogManager):
     await manager.start(Question.title_group)
@@ -80,3 +73,6 @@ async def send_cassa_order(callback : CallbackQuery, widget: Any, manager: Dialo
 
 async def go_admin(c: CallbackQuery, widget: Any, manager: DialogManager):
     await manager.start(AdminPanel.admin_menu)
+    
+async def to_orders_list(c: CallbackQuery, widget: Any, manager: DialogManager):
+    await manager.start(OrdersList.orders_start)

@@ -12,10 +12,6 @@ def bot_menu_dialogs():
             windows.w_cooperation(),
         ),
         Dialog(
-            windows.w_cosultation(),
-            windows.consul_info()
-        ),
-        Dialog(
             windows.w_courses(),
         ),
         Dialog(
@@ -39,5 +35,8 @@ def bot_menu_dialogs():
             windows.w_suc_pay_send(),
             windows.w_suc_payment(),
             windows.w_question_input()
+        ),
+        Dialog(
+            windows.order_page()
         )
     ]

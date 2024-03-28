@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime, timedelta
-from sqlalchemy import distinct, select, Result
-from .models import User, FreeQuestion, Appeal, PaidQuestion, Admin
+from sqlalchemy import distinct, select, Result, update
+from .models import User, FreeQuestion, Appeal, PaidQuestion, Admin, ConsultationQuiz, Order
 
 class Repo:
     def __init__(self, session: AsyncSession):
@@ -103,3 +103,38 @@ class Repo:
         result : Result = await self.session.execute(select(Appeal.appeal_field))
         quest = result.scalars().all()
         return quest
+    
+    async def add_quiz_data(self, cur_quiz, user_tg_id, field):
+        consult_quiz = ConsultationQuiz(cur_quiz = cur_quiz, field = field, user_tg_id = user_tg_id)
+        self.session.add(consult_quiz)
+        await self.session.commit()
+        
+    async def set_field_data(self, cur_quiz, user_tg_id, field):
+        stmt = update(ConsultationQuiz).where(ConsultationQuiz.user_tg_id == user_tg_id).values(field = field, cur_quiz = cur_quiz)
+        await self.session.execute(stmt)
+        await self.session.commit()
+        
+    async def get_quiz_data(self, tg_id):
+        stmt = (select(ConsultationQuiz.cur_quiz, ConsultationQuiz.field).where(ConsultationQuiz.user_tg_id == tg_id))
+        quiz_data : Result = await self.session.execute(stmt)
+        result = quiz_data.first()
+        return result
+    
+    async def create_order_data(self, field, user_tg_id):
+        order = Order(field = field, user_tg_id = user_tg_id)
+        self.session.add(order)
+        await self.session.commit()
+        return order
+    
+    async def get_order_data(self, user_tg_id):
+        stmt = (select(Order.date_change_status, Order.date_create, Order.status, Order.field).where(Order.user_tg_id == user_tg_id))
+        order_data : Result = await self.session.execute(stmt)
+        result = order_data.first()
+        return result
+    
+    async def get_orders(self):
+        stmt = (select(User.username, Order.status, User.tg_id).join(Order.user))
+        orders : Result = await self.session.execute(stmt)
+        result = orders.all()
+        return result 
+        

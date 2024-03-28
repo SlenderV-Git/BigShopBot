@@ -14,6 +14,11 @@ def admin_menu_dialog():
             awindows.free_quest_list(),
             awindows.paid_quest_list(),
             awindows.tech_supp_list(),
+            awindows.aconsul_list(),
+            
+        ),
+        Dialog(
+            awindows.order_page_admin()
         ),
         Dialog(
             awindows.start_meiling(),
