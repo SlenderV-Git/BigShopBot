@@ -52,6 +52,7 @@ def w_question():
             Button(Const("Обращение в техподдержку"), id="tech_sup", on_click=selected.to_support),
             Button(Const("Платный вопрос"), id="paid_question", on_click=selected.to_paid_question),
         ),
+        Cancel(Const("Отмена")),
         state=Question.title_group
     )
 def free_question():
@@ -65,6 +66,7 @@ def free_question():
 def finish_free_question():
     return Window(
         Const("Сообщение отправлено."),
+        Cancel(Const("Отмена")),
         state=FreeQuestion.finish_input
     )
     
@@ -80,6 +82,7 @@ def tech_support():
 def finish_tech_support():
     return Window(
         Const("Обращение успешно отправлено"),
+        Cancel(Const("Отмена")),
         state = TechSupport.finish_input
     )
 def paid_question():
@@ -113,6 +116,7 @@ def w_question_input():
 def w_suc_pay_send():
     return Window(
         Const("Обращение успешно отправлено"),
+        Cancel(Const("Отмена")),
         state = PaidQuestion.finish_input
     )
     
@@ -120,6 +124,7 @@ def w_unsuc_payment():
     return Window(
         Const("Ошибка оплаты"),
         Cancel(Const("Повторить")),
+        Cancel(Const("Отмена")),
         state=Question.unsuccessful_payment
     )
     

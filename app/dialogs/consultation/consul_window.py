@@ -1,6 +1,7 @@
 from aiogram_dialog import Window, DialogManager
+from aiogram import F
 from aiogram_dialog.widgets.kbd import Cancel, Back, Button, Column, Row, ScrollingGroup, Select
-from aiogram_dialog.widgets.text import Format, Const, Jinja
+from aiogram_dialog.widgets.text import Format, Const, Jinja, Progress
 from aiogram_dialog.widgets.media import DynamicMedia
 from app.dialogs.consultation import consul_selected
 from app.dialogs.consultation.consul_states import Consultation
@@ -18,11 +19,13 @@ def w_cosultation():
             Button(Const("Согласен"), id='consul_accept', on_click= consul_selected.consul_accept_process),
             Cancel(Const("Не согласен"), id = "consul_deny")
         ),
+        Cancel(Const("Отмена")),
         state=Consultation.info
     )
 
 def consul_quiz():
     return Window(
+#        Progress("index", "quiz_len"),
         Format("{cur_quiz}"),
         TextInput(id='pay_quest_input', on_success=consul_selected.process_answer),
         Cancel(Const("Отмена")),
@@ -36,7 +39,9 @@ async def get_question(**kwargs):
     quiz = quiz_data["quiz"]
     cur_quiz = quiz_data["cur_quiz"]
     return {
-        "cur_quiz" : quiz[cur_quiz]
+        "cur_quiz" : quiz[cur_quiz],
+        "index" : cur_quiz,
+        "quiz_len" : len(quiz)
     }
     
 def finish_quiz_window():

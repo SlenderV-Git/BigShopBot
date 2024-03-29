@@ -18,7 +18,8 @@ def main_menu():
             Button(Const("Отчет по пользователям"), id="user_report", on_click=aselected.to_user_report),
             Button(Const("Заявки"), id="requests", on_click=aselected.to_requests),
             Button(Const("Рассылка"), id="mailing", on_click=aselected.to_mailing),
-        ),    
+        ),
+        Cancel(Const("Назад")),
         state= AdminPanel.admin_menu
     )
 
