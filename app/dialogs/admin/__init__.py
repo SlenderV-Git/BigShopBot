@@ -15,7 +15,6 @@ def admin_menu_dialog():
             awindows.paid_quest_list(),
             awindows.tech_supp_list(),
             awindows.aconsul_list(),
-            
         ),   
         Dialog(
             awindows.order_page_admin(),
@@ -28,6 +27,7 @@ def admin_menu_dialog():
         ),
         Dialog(
             awindows.start_meiling(),
+            awindows.finish_mailing()
         ),
         Dialog(
             awindows.user_report(),
@@ -35,5 +35,16 @@ def admin_menu_dialog():
         Dialog(
             awindows.admin_free_answer(),
             awindows.finish_free_answer()
+        ),
+        Dialog(
+            awindows.course_list_admin(),
+            awindows.course_page()
+        ),
+        Dialog(
+            awindows.admin_add_title(),
+            awindows.admin_add_description(),
+            awindows.admin_add_cost(),
+            awindows.admin_add_bonus(),
+            awindows.finish_add_couse()
         )
     ]

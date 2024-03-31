@@ -69,7 +69,7 @@ async def current_faq(c: CallbackQuery, widget: Any, manager: DialogManager):
     
 async def send_cassa_order(callback : CallbackQuery, widget: Any, manager: DialogManager):
     await callback.answer()
-    await send_order(message = callback.message, bot=callback.message.bot, order_name="add_money")
+    await send_order(message = callback.message, order_name="add_money", price=100)
 
 async def go_admin(c: CallbackQuery, widget: Any, manager: DialogManager):
     await manager.start(AdminPanel.admin_menu)
@@ -84,3 +84,17 @@ async def finish_done_doc(message : Message, widget: Any, manager: DialogManager
     repo : Repo = manager.middleware_data.get("repo")
     await repo.set_done_doc(manager.event.from_user.id, message.document.file_id)
     await manager.switch_to(SendDoneDoc.finish_doc)
+    
+async def cur_course(c: CallbackQuery, widget: Any, manager: DialogManager, data):
+    repo : Repo = manager.middleware_data.get("repo")
+    course_data = await repo.get_course_by_id(int(data))
+    manager.dialog_data["course_id"] = int(data)
+    manager.dialog_data["cur"] = course_data[1]
+    manager.dialog_data["count"] = course_data[2]
+    await manager.switch_to(Courses.course_desription)
+
+async def buy_courses_page(c: CallbackQuery, widget: Any, manager: DialogManager):
+    await send_order(message=c.message, 
+                     order_name="buy_course", 
+                     price=manager.dialog_data["count"], 
+                     course_id = manager.dialog_data.get("course_id"))

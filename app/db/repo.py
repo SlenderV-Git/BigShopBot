@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime, timedelta
 from sqlalchemy import distinct, select, Result, update
-from .models import User, FreeQuestion, Appeal, PaidQuestion, Admin, ConsultationQuiz, Order
+from .models import User, FreeQuestion, Appeal, PaidQuestion, Admin, ConsultationQuiz, Order, Course, CoursePurchase
 
 class Repo:
     def __init__(self, session: AsyncSession):
@@ -26,6 +26,11 @@ class Repo:
             await self.session.commit()
         return user
     
+    async def set_user_active_or_ban(self, user_id, status : bool):
+        stmt = update(User).where(User.tg_id == user_id).values(is_active = status)
+        await self.session.execute(stmt)
+        await self.session.commit()
+        
     async def create_free_question(self, field : str, user_tg_id : int):
         free_question = FreeQuestion(field = field, user_tg_id = user_tg_id)
         self.session.add(free_question)
@@ -186,3 +191,32 @@ class Repo:
         stmt = (select(Order.done_document_id).where(Order.user_tg_id == user_id))
         users : Result = await self.session.execute(stmt)
         return users.scalars().first()
+    
+    async def get_courses(self):
+        result : Result = await self.session.execute(select(Course.course_id, Course.title, Course.description, Course.cost))
+        names = result.all()
+        return names
+    
+    async def get_course_by_id(self, course_id):
+        result : Result = await self.session.execute(select(Course.title, Course.description, Course.cost, Course.after_buy_content).where(Course.course_id == course_id))
+        names = result.all()[0]
+        return names
+    
+    async def buy_course(self, course_id, user_id):
+        order = CoursePurchase(user_tg_id = user_id, course_id = course_id)
+        self.session.add(order)
+        await self.session.commit()
+        return order
+    
+    async def add_course(self, title, description, cost, after_buy_content):
+        course = Course(title = title, 
+                        description = description, 
+                        cost = cost, 
+                        after_buy_content = after_buy_content)
+        self.session.add(course)
+        await self.session.commit()
+        return course
+    
+    async def get_sell_courses(self, tg_id):
+        result : Result = await self.session.execute(select(Course.title, Course.description, Course.after_buy_content).join(Course.course_purchases).where(CoursePurchase.user_tg_id == tg_id))
+        return result.all()

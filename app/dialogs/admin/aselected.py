@@ -1,8 +1,18 @@
 from aiogram.types import CallbackQuery, Message
 from typing import Any
-from app.dialogs.admin.astates import AdminPanel, Mailing, AdminReq, UserReports, AdminFreeQuestion, QuestionGroup, OrderChange, PaymentData
+from app.dialogs.admin.astates import (AdminPanel, 
+                                       Mailing, 
+                                       AdminReq, 
+                                       UserReports, 
+                                       AdminFreeQuestion, 
+                                       QuestionGroup, 
+                                       OrderChange, 
+                                       PaymentData, 
+                                       CourseList,
+                                       AddingCourse)
 from aiogram_dialog import DialogManager
 from app.db.repo import Repo
+from time import sleep
 
 async def to_requests(c: CallbackQuery, widget: Any, manager: DialogManager):
     await manager.start(AdminReq.admin_req)
@@ -69,3 +79,48 @@ async def on_input_url(message : Message, widget: Any, manager: DialogManager, d
     await repo.add_payment_data(user_id=user_id, url_pay=data, doc_id=doc_id)
 #    await message.bot.send_document(chat_id=message.chat.id, document= doc_id)
     await manager.switch_to(PaymentData.finish_input)
+    
+async def send_maili(message : Message, widget: Any, manager: DialogManager, data):
+    print(data)
+    await manager.switch_to(Mailing.finish_mailing)
+    repo : Repo = manager.middleware_data.get("repo")
+    users : list = await repo.active_users()
+    for user in users:
+        try:
+            await message.forward(chat_id=user)
+        except:
+            print("NotFound")
+        sleep(1)
+        
+async def to_courses_list(c: CallbackQuery, widget: Any, manager: DialogManager):
+    await manager.start(CourseList.course_list)
+    
+async def on_cur_course(callback: CallbackQuery, widget: Any,
+                            manager: DialogManager, item_id: str):
+    manager.dialog_data["item"] = int(item_id)
+    await manager.switch_to(CourseList.cur_course)
+
+async def start_add(callback: CallbackQuery, widget: Any,
+                            manager: DialogManager):
+    await manager.start(AddingCourse.add_title)
+
+async def add_title(message : Message, widget: Any, manager: DialogManager, data):
+    manager.dialog_data["title"] = data
+    await manager.switch_to(AddingCourse.add_description)
+    
+async def on_add_description(message : Message, widget: Any, manager: DialogManager, data):
+    manager.dialog_data["description"] = data
+    await manager.switch_to(AddingCourse.add_cost)
+    
+async def on_add_cost(message : Message, widget: Any, manager: DialogManager, data : str):
+    if data.isdigit():
+        manager.dialog_data["cost"] = int(data)
+        await manager.switch_to(AddingCourse.add_bonus)
+
+async def on_add_bonus(message : Message, widget: Any, manager: DialogManager, data):
+    title = manager.dialog_data.get("title")
+    description = manager.dialog_data.get("description")
+    cost = manager.dialog_data.get("cost")
+    repo : Repo = manager.middleware_data.get("repo")
+    await repo.add_course(title=title, description=description, cost=cost, after_buy_content=data)
+    await manager.switch_to(AddingCourse.finish_add)

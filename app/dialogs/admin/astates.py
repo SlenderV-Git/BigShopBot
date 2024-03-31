@@ -8,6 +8,7 @@ class UserReports(StatesGroup):
     
 class Mailing(StatesGroup):
     mailing_start = State()
+    finish_mailing = State()
 
 class AdminReq(StatesGroup):
     admin_req = State()
@@ -31,4 +32,15 @@ class PaymentData(StatesGroup):
 class AdminFreeQuestion(StatesGroup):
     input_answer = State()
     finish_answer = State()
+    
+class CourseList(StatesGroup):
+    course_list = State()
+    cur_course = State()
+
+class AddingCourse(StatesGroup):
+    add_title = State()
+    add_description = State()
+    add_cost = State()
+    add_bonus = State()
+    finish_add = State()
     

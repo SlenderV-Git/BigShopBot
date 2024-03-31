@@ -64,14 +64,18 @@ class Course(Base):
     title = Column(String(50), nullable=False)
     description = Column(String, nullable=False)
     cost = Column(BigInteger)
+    after_buy_content = Column(String)
+    course_purchases = relationship("CoursePurchase", back_populates="course")
 
 class CoursePurchase(Base):
-    __tablename__ = "cource_purchases"
+    __tablename__ = "course_purchases"
     
     purchase_id = Column(BigInteger, primary_key=True, autoincrement=True)
-    date_create = Column(DATE, default=func.current_date)
+    date_create = Column(DATE, default=func.current_date())
     user_tg_id = Column(BigInteger, ForeignKey("users.tg_id"))
+    course_id = Column(BigInteger, ForeignKey("course.course_id"))
     user = relationship("User", back_populates="purchases")
+    course = relationship("Course", back_populates="course_purchases")
     
     
 class FreeQuestion(Base):

@@ -13,6 +13,7 @@ def bot_menu_dialogs():
         ),
         Dialog(
             windows.w_courses(),
+            windows.view_course_description()
         ),
         Dialog(
             windows.w_faq(),
@@ -42,5 +43,8 @@ def bot_menu_dialogs():
         Dialog(
             windows.send_doc_page(),
             windows.finish_doc_page()
+        ),
+        Dialog(
+            windows.finish_course()
         )
     ]

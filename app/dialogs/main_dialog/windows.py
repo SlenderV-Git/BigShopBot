@@ -1,4 +1,5 @@
 import logging
+import operator
 from typing import Any
 from magic_filter import F
 from aiogram import Bot
@@ -6,10 +7,10 @@ from aiogram.enums import ContentType
 from aiogram_dialog.widgets.common import Whenable
 from aiogram_dialog import Window, Data, DialogManager, ShowMode
 from aiogram_dialog.widgets.input import TextInput, MessageInput
-from aiogram_dialog.widgets.kbd import Cancel, Back, Button, Column, Row
+from aiogram_dialog.widgets.kbd import Cancel, Back, Button, Column, Row, ListGroup, Select, ScrollingGroup
 from aiogram_dialog.widgets.text import Format, Const, Jinja
 from . import keyboards, selected
-from .states import BotMenu, Question, TechSupport, PaidQuestion, FreeQuestion, Cooperation, FAQ, Courses, OrdersList, SendDoneDoc
+from .states import BotMenu, Question, TechSupport, PaidQuestion, FreeQuestion, Cooperation, FAQ, Courses, OrdersList, SendDoneDoc, GoneCourses
 from enum import Enum
 from aiogram_dialog.widgets.kbd import SwitchInlineQuery
 from aiogram_dialog.widgets.text import Const
@@ -35,6 +36,16 @@ def main_menu():
         getter=get_user,
         state=BotMenu.main_menu  
     )
+
+
+async def get_courses(**kwargs):
+    manager : DialogManager = kwargs.get("dialog_manager")
+    repo : Repo = manager.middleware_data.get("repo")
+    courses_data = await repo.get_courses()
+    return {
+        'courses' : [(item[1], item[0]) for item in courses_data],
+        'is_added' : False if courses_data else True
+    }
 
 async def get_user(**kwargs):
     manager : DialogManager = kwargs.get("dialog_manager")
@@ -131,17 +142,31 @@ def w_unsuc_payment():
 def w_courses():
     return Window(
         Const("Курсы"),
-        Column(
-            Button(Const("Название"), id="couse_id")
+        Const("Нет доступных курсов", when= "is_added"),
+        ScrollingGroup(
+            Select(
+                Format('{item[0]}'),
+                id="cource_item",
+                item_id_getter=operator.itemgetter(1),
+                items="courses",
+                on_click=selected.cur_course
+            ),
+            id="couce_list",
+            height=6,
+            width=1
         ),
         Cancel(Const("В главное меню")),
+        getter=get_courses,
         state=Courses.show_course_list
     )
 
 def view_course_description():
     return Window(
+        Format("{dialog_data[cur]}"),
+        Button(Const("Купить"), id = "buy_course", on_click=selected.buy_courses_page),
+        Cancel(Const("Отмена")),
+        state=Courses.course_desription
     )
-
 def w_cooperation():
     return Window(
         Const("По поводу сотрудничества отправьте сообщения на XXXXX"),
@@ -176,6 +201,7 @@ def order_page():
 {% endfor %}
                 """
             ),
+        Format("Ваши купленные курсы:\n{courses}", when="course_added"),
         Format("Ваша ссылка на приватную группу: {private_url}", when="approved"),
         Format("Ссылка на оплату: {pay_url}", when="payment"),
         Button(Const("Отравить подписанный документ"), id = "send_done_document", on_click=selected.to_send_doc, when="payment"),
@@ -224,14 +250,27 @@ async def get_orders(**kwargs):
         consul_data = [(text_item , data_item) for text_item, data_item in zip(text, order_data)]
         if doc_id:
             await bot.send_document(chat_id= manager.event.message.chat.id, document=doc_id)
+    
+    courses = await repo.get_sell_courses(manager.event.from_user.id)
+    if courses:
+        course_sells = "\n\n".join(["\n".join(course) for course in courses])
+        
+    
     return {
         "consul" : consul_data,
         "title" : "Записи на консультацию:",
         "private_url" : url,
         "pay_url" : pay_url,
         "approved" : status == "access",
-        "payment" : status == "payment"
+        "payment" : status == "payment",
+        "courses" : course_sells if courses else "",
+        "course_added" : True if courses else False
     }
 
 
-    
+def finish_course():
+    return Window(
+        Format("{start_data[course]}"),
+        Cancel(Const("Назад")),
+        state= GoneCourses.suc_payment
+    )

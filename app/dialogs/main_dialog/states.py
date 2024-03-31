@@ -26,9 +26,10 @@ class Courses(StatesGroup):
     show_course_list = State()
     course_desription = State()
     terms_agreement = State()
-    course_fees = State()
-    suc_payment = State()
     unsuc_payment = State()
+    
+class GoneCourses(StatesGroup):
+    suc_payment = State()
 
 class Cooperation(StatesGroup):
     contacts = State()

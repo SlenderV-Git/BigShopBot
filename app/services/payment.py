@@ -3,18 +3,23 @@ from aiogram.types import Message, LabeledPrice
 from app.dialogs.main_dialog.lexicon import ORDERS
 from app.config_reader import load_setting
 
-def make_price(price_raw : tuple):
-    return [LabeledPrice(label=price[0].format(load_setting().top_up), amount=price[1]) for price in price_raw]
+def make_price(label, price):
+    return LabeledPrice(label=label, amount=price)
 
-async def send_order(message : Message, bot : Bot, order_name : str):
+async def send_order(message : Message, order_name : str, price : int, **kwargs):
     order = ORDERS[order_name]
-    await bot.send_invoice(
+    payload = order["payload"]
+    param = kwargs.get("course_id")
+    if param:
+        payload += f"_{param}"
+    await message.bot.send_invoice(
         chat_id= message.chat.id,
         title= order["title"],
         description=order["description"],
-        payload=order["payload"],
+        payload=payload,
         provider_token=load_setting().provider_token,
-        prices=make_price(order["prices"]),
+        prices=[make_price(order["prices"], price=price * 100)],
         currency=order["currency"],
         photo_url=order["photo"]
     )
+    

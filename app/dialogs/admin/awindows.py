@@ -2,7 +2,16 @@ from aiogram_dialog import Window, DialogManager
 from aiogram_dialog.widgets.kbd import Cancel, Back, Button, Column, Row, ScrollingGroup, Select
 from aiogram_dialog.widgets.text import Format, Const, Jinja
 from app.dialogs.admin import aselected
-from app.dialogs.admin.astates import AdminPanel, UserReports, AdminReq, Mailing, AdminFreeQuestion, QuestionGroup, OrderChange, PaymentData
+from app.dialogs.admin.astates import (AdminPanel, 
+                                       UserReports, 
+                                       AdminReq, 
+                                       Mailing, 
+                                       AdminFreeQuestion, 
+                                       QuestionGroup, 
+                                       OrderChange, 
+                                       PaymentData,
+                                       CourseList,
+                                       AddingCourse)
 from aiogram_dialog.widgets.input import TextInput, MessageInput
 from app.db.repo import Repo
 from aiogram.enums import ContentType
@@ -18,11 +27,101 @@ def main_menu():
             Button(Const("Отчет по пользователям"), id="user_report", on_click=aselected.to_user_report),
             Button(Const("Заявки"), id="requests", on_click=aselected.to_requests),
             Button(Const("Рассылка"), id="mailing", on_click=aselected.to_mailing),
+            Button(Const("Курсы"), id = "courses_admin", on_click=aselected.to_courses_list)
         ),
         Cancel(Const("Назад")),
         state= AdminPanel.admin_menu
     )
+    
+def course_list_admin():
+    return Window(
+        Format("Список курсов в продаже. Дата выставления отчета: {date}"),
+        ScrollingGroup(
+            Select(
+                Format("{item[1]} ({pos}/{data[count]})"),
+                id="course_item",
+                item_id_getter=operator.itemgetter(0),
+                items="course_items",
+                on_click=aselected.on_cur_course
+            ),
+            id="couse_list",
+            width=1, 
+            height=6
+        ),
+        Button(Const("Добавить курс"), id="add_course", on_click=aselected.start_add),
+        Cancel(Const("Назад")),
+        getter= get_course_list,
+        state= CourseList.course_list
+    )
+    
+def admin_add_title():
+    return Window(
+        Const("Введите заголовок курса (До 50 символов)"),
+        Cancel(Const("Отмена")),
+        TextInput(id= "add_title", on_success = aselected.add_title),
+        state= AddingCourse.add_title
+    )
+    
+def admin_add_description():
+    return Window(
+        Const("Введите описание курса"),
+        Cancel(Const("Отмена")),
+        TextInput(id= "add_description", on_success = aselected.on_add_description),
+        state= AddingCourse.add_description
+    )
 
+def admin_add_cost():
+    return Window(
+        Const("Добавьте стоимость курса в рублях"),
+        Cancel(Const("Отмена")),
+        TextInput(id= "add_cost", on_success = aselected.on_add_cost),
+        state= AddingCourse.add_cost
+    )
+    
+def admin_add_bonus():
+    return Window(
+        Const("Добавьте ссылку на ресурс или любой другой текст который пользователь получит после оплаты"),
+        Cancel(Const("Отмена")),
+        TextInput(id= "add_bonus", on_success = aselected.on_add_bonus),
+        state= AddingCourse.add_bonus
+    )
+
+def finish_add_couse():
+    return Window(
+        Const("Курс успешно добавлен"),
+        Cancel(Const("Отмена")),
+        state=AddingCourse.finish_add
+    )
+    
+
+async def get_course_list(**kwargs):
+    manager : DialogManager = kwargs.get("dialog_manager")
+    repo : Repo = manager.middleware_data.get("repo")
+    req = await repo.get_courses()
+    return {
+        "course_items" : req,
+        "count": len(req),
+        "date" : datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    }
+def course_page():
+    return Window(
+        Format("{title}\n\n{description}"),
+        Button(Const("Удалить"), id="delete_course"),
+        Cancel(Const("Отмена")),
+        getter=get_cur_course,
+        state=CourseList.cur_course
+    )
+    
+async def get_cur_course(**kwargs):
+    manager : DialogManager = kwargs.get("dialog_manager")
+    repo : Repo = manager.middleware_data.get("repo")
+    course_id = manager.dialog_data.get("item")
+    req = await repo.get_course_by_id(course_id=course_id)
+    return {
+        "title" : req[0],
+        "description" : req[1]
+    }
+    
 def user_report():
     return Window(
         Jinja(
@@ -280,6 +379,13 @@ async def get_orders_admin(**kwargs):
 def start_meiling():
     return Window(
         Const("Рассылка сообщений"),
+        TextInput(id="mailing_inputi", on_success=aselected.send_maili),
         Cancel(Const("Назад")),
         state=Mailing.mailing_start
+    )
+
+def finish_mailing():
+    return Window(
+        Const("Сообщение успешно отправлено"),
+        state=Mailing.finish_mailing
     )
